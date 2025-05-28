@@ -1,143 +1,119 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+
 using namespace std;
 
-bool isValidRoll(int roll) {
-    return roll >= 0 && roll <= 10;
+bool checkRoll(int x) {
+    return x >= 0 && x <= 10;
 }
 
-int calculateScore(const vector<int>& rolls, vector<int>& frameScores) {
-    int score = 0;
-    int rollIndex = 0;
+int getScore(const vector<int>& r, vector<int>& scores) {
+    int s = 0;
+    int i = 0;
 
-    for (int frame = 0; frame < 10; ++frame) {
-        if (rolls[rollIndex] == 10) {  // Strike
-            int frameScore = 10 + rolls[rollIndex + 1] + rolls[rollIndex + 2];
-            score += frameScore;
-            frameScores.push_back(score);
-            rollIndex += 1;
-        } else if (rolls[rollIndex] + rolls[rollIndex + 1] == 10) {  // Spare
-            int frameScore = 10 + rolls[rollIndex + 2];
-            score += frameScore;
-            frameScores.push_back(score);
-            rollIndex += 2;
-        } else {  // Open frame
-            int frameScore = rolls[rollIndex] + rolls[rollIndex + 1];
-            score += frameScore;
-            frameScores.push_back(score);
-            rollIndex += 2;
+    for (int f = 0; f < 10; ++f) {
+        if (r[i] == 10) {
+            s += 10 + r[i+1] + r[i+2];
+            scores.push_back(s);
+            i += 1;
+        } else if (r[i] + r[i+1] == 10) {
+            s += 10 + r[i+2];
+            scores.push_back(s);
+            i += 2;
+        } else {
+            s += r[i] + r[i+1];
+            scores.push_back(s);
+            i += 2;
         }
     }
 
-    return score;
+    return s;
 }
 
 int main() {
-    vector<int> rolls;
-    vector<int> frameScores;
-    int pins, frame = 1;
+    vector<int> r;
+    vector<int> scores;
+    int f = 1;
 
-    cout << "==== Bowling Score Calculator ====\n";
-    cout << "Would you like to input from file? (y/n): ";
-    char inputMode;
-    cin >> inputMode;
+    cout << "Bowling Game\n";
+    cout << "Use file input? y/n: ";
+    char mode;
+    cin >> mode;
 
-    if (inputMode == 'y' || inputMode == 'Y') {
-        string filename;
-        cout << "Enter input file name: ";
-        cin >> filename;
-        ifstream infile(filename);
-        if (!infile) {
-            cerr << "Error opening file.\n";
-            return 1;
-        }
-
-        int val;
-        while (infile >> val) {
-            rolls.push_back(val);
-        }
+    if (mode == 'y') {
+        string fn;
+        cout << "Filename: ";
+        cin >> fn;
+        ifstream fin(fn);
+        int n;
+        while (fin >> n) r.push_back(n);
     } else {
-        while (frame <= 10) {
-            if (frame < 10) {
-                int roll1, roll2;
-                cout << "Frame " << frame << ":\n";
+        while (f <= 10) {
+            int a, b, c;
+            cout << "Frame " << f << endl;
+            cout << "  Roll 1: ";
+            cin >> a;
 
-                do {
-                    cout << "  Roll 1: ";
-                    cin >> roll1;
-                } while (!isValidRoll(roll1));
+            while (!checkRoll(a)) {
+                cout << "  Invalid. Roll 1 again: ";
+                cin >> a;
+            }
 
-                if (roll1 == 10) {
-                    rolls.push_back(10);
-                    frame++;
+            if (f < 10) {
+                if (a == 10) {
+                    r.push_back(10);
+                    f++;
                     continue;
                 }
-
-                do {
-                    cout << "  Roll 2: ";
-                    cin >> roll2;
-                } while (!isValidRoll(roll2) || roll1 + roll2 > 10);
-
-                rolls.push_back(roll1);
-                rolls.push_back(roll2);
-                frame++;
-            } else {
-                cout << "Frame 10:\n";
-                int r1, r2, r3 = 0;
-
-                do {
-                    cout << "  Roll 1: ";
-                    cin >> r1;
-                } while (!isValidRoll(r1));
-                rolls.push_back(r1);
-
-                do {
-                    cout << "  Roll 2: ";
-                    cin >> r2;
-                } while (!isValidRoll(r2) || (r1 != 10 && r1 + r2 > 10));
-                rolls.push_back(r2);
-
-                if (r1 == 10 || r1 + r2 == 10) {
-                    do {
-                        cout << "  Roll 3 (Bonus): ";
-                        cin >> r3;
-                    } while (!isValidRoll(r3));
-                    rolls.push_back(r3);
+                cout << "  Roll 2: ";
+                cin >> b;
+                while (!checkRoll(b) || (a + b > 10)) {
+                    cout << "  Invalid. Roll 2 again: ";
+                    cin >> b;
                 }
-                break;
+                r.push_back(a);
+                r.push_back(b);
+            } else {
+                // 10th frame
+                cout << "  Roll 2: ";
+                cin >> b;
+                r.push_back(a);
+                r.push_back(b);
+                if (a == 10 || a + b == 10) {
+                    cout << "  Roll 3: ";
+                    cin >> c;
+                    r.push_back(c);
+                }
             }
+
+            f++;
         }
     }
 
-    int totalScore = calculateScore(rolls, frameScores);
+    int total = getScore(r, scores);
 
-    cout << "\n==== Score Breakdown ====\n";
-    for (size_t i = 0; i < frameScores.size(); ++i) {
-        cout << "Frame " << i + 1 << ": " << frameScores[i] << endl;
+    cout << "\n-- Frame Scores --\n";
+    for (size_t i = 0; i < scores.size(); ++i) {
+        cout << "Frame " << i+1 << ": " << scores[i] << endl;
     }
 
-    cout << "Total Score: " << totalScore << endl;
+    cout << "Total: " << total << endl;
 
-    // Optional output to file
-    cout << "\nSave result to file? (y/n): ";
+    cout << "\nSave to file? (y/n): ";
     char save;
     cin >> save;
 
-    if (save == 'y' || save == 'Y') {
-        string outfileName;
-        cout << "Enter output file name: ";
-        cin >> outfileName;
-        ofstream outfile(outfileName);
-        if (!outfile) {
-            cerr << "Error writing to file.\n";
-            return 1;
+    if (save == 'y') {
+        string out;
+        cout << "File name: ";
+        cin >> out;
+        ofstream fout(out);
+        for (size_t i = 0; i < scores.size(); ++i) {
+            fout << "Frame " << i+1 << ": " << scores[i] << "\n";
         }
-        for (size_t i = 0; i < frameScores.size(); ++i) {
-            outfile << "Frame " << i + 1 << ": " << frameScores[i] << "\n";
-        }
-        outfile << "Total Score: " << totalScore << "\n";
-        cout << "Saved to " << outfileName << endl;
+        fout << "Total: " << total << "\n";
+        cout << "Saved.\n";
     }
 
     return 0;
